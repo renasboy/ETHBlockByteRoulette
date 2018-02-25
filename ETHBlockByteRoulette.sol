@@ -9,10 +9,9 @@ contract ETHBlockByteRoulette {
     uint8 public last_result;
     bytes1 private block_pointer;
     bytes1 private byte_pointer;
-    mapping(uint8 => bool) private numbers;
 
     event Balance(uint256 _balance);
-    event Play(address indexed _sender, bytes1[] _numbers, uint8 _result, bool _winner, uint256 _time);
+    event Play(address indexed _sender, uint8[] _numbers, uint8 _result, bool _winner, uint256 _time);
     event Withdraw(address indexed _sender, uint256 _amount, uint256 _time);
     event Risk(uint256 _risk);
     event Destroy();
@@ -40,23 +39,26 @@ contract ETHBlockByteRoulette {
         _;
     }
 
-    function play(bytes1[] _numbers) public payable isDirect isPaid returns (bool) {
+    function play(uint8[] _numbers) public payable isDirect isPaid returns (bool) {
         // min risk is 18 now
         if (_numbers.length > min_risk) {
             revert();
         }
-        // cast numbers to uint8 inside the map
+        bool[37] memory numbers;
+        // cast numbers to uint8
         for (uint8 i = 0; i < _numbers.length; i++) {
-            uint8 number = uint8(_numbers[i]);
-            if (number == 0 || number > 36) {
+            if (_numbers[i] < 1 || _numbers[i] > 36) {
                 revert();
             }
-            numbers[number] = true;
+            numbers[_numbers[i]] = true;
         }
         // get result block hash
         bytes32 block_hash = block.blockhash(block.number - uint8(block_pointer));
         // get result block byte
         bytes1 byte_result = block_hash[uint8(byte_pointer) % 32];
+        // cast result to uint8
+        uint8 int_result = uint8(byte_result);
+
         // set new pointers for new play
         block_pointer = block_hash[31];
         if (block_pointer == 0x00) {
@@ -64,17 +66,15 @@ contract ETHBlockByteRoulette {
         }
         byte_pointer = block_hash[0];
 
-        // cast result to uint8
-        last_result = uint8(byte_result);
         // calculate roulete result with 13% house
-        uint8 roulette_result = 0;
-        if (last_result < 221) {
-            roulette_result = last_result % 37;
+        last_result = 0;
+        if (int_result < 221) {
+            last_result = int_result % 37;
         }
 
         bool winner = false;
         // check for winner, ZERO is HOUSE
-        if (numbers[roulette_result]) {
+        if (numbers[last_result]) {
             winner = true;
             // there is a winner, calculate prize
             uint256 percentage_risk = 100 - (_numbers.length * 100) / 36;
@@ -86,10 +86,6 @@ contract ETHBlockByteRoulette {
             if (!msg.sender.send(credit)) {
                 revert();
             }
-        }
-        for (i = 0; i < _numbers.length; i++) {
-            number = uint8(_numbers[i]);
-            numbers[number] = false;
         }
         max_fee = this.balance / 4;
         Balance(this.balance);

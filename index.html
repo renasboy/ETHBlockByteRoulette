@@ -1,7 +1,7 @@
 <!doctype html>
 <html>
 <head>
-<title>ETHBlockByte</title>
+<title>ETHBlockByteRoulette</title>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <script type="text/javascript" src="js/bignumber.min.js"></script>
@@ -97,7 +97,7 @@ time {
 }
 </style>
 
-<script type="text/javascript" src="bin/conf.js"></script>
+<script type="text/javascript" src="bin/conf-roulette.js"></script>
 <script type="text/javascript">
 
     var bootstrap = function () {
@@ -292,7 +292,7 @@ time {
             if (play_event.args._winner) {
                 div.className = 'line winner';
             }
-            var text = document.createTextNode('start: ' + parseInt(play_event.args._start) + ' end: ' + parseInt(play_event.args._end) + ' result: ' + parseInt(play_event.args._result));
+            var text = document.createTextNode('start: ' + play_event.args._numbers.join(',') + ' result: ' + parseInt(play_event.args._result));
             div.appendChild(text);
             article.prepend(div);
         };
@@ -328,7 +328,7 @@ time {
             div.className = 'line';
             
             var h5 = document.createElement('h5');
-            var text = document.createTextNode('Risk range from START to END, guess the RESULT between 1 and 255');
+            var text = document.createTextNode('Risk range from START to END, guess the RESULT between 1 and 36');
             h5.appendChild(text);
             div.appendChild(h5);
 
@@ -376,14 +376,14 @@ time {
         var create_sliders = function (max_fee) {
             var guess_slider = document.getElementById('guess-slider');
             noUiSlider.create(guess_slider, {
-                start: [30, 225],
+                start: [1, 18],
                 step: 1,
                 behaviour: 'drag',
                 connect: [true, true, true],
                 tooltips: true,
                 range: {
                     'min': 1,
-                    'max': 255
+                    'max': 36
                 },
                 format: {
                     to: function (value) { return parseInt(value); },
@@ -432,8 +432,9 @@ time {
 
             // from .sol
             var range = end - start + 1;
-            var percentage = 100 - parseInt(range * 100 / 255);
-            var prize = fee.times(percentage).div(100);
+            var percentage_risk = 100 - parseInt((range * 100) / 36);
+            var percentage = ((percentage_risk - 50) * 100) / 50;
+            var prize = fee.times(parseInt(percentage)).div(100);
             var credit = fee.plus(prize);
 
             fee = parseFloat(web3.fromWei(fee, 'ether')).toFixed(3) + ' ETH';
@@ -448,17 +449,16 @@ time {
                 return;
             }
             document.getElementById('play-error').innerText = '';
-            var guess_slider = document.getElementById('guess-slider').noUiSlider.get()
-            var start = ('0' + guess_slider[0].toString(16)).slice(-2);
-            var end = ('0' + guess_slider[1].toString(16)).slice(-2);
+            var guess_slider = document.getElementById('guess-slider').noUiSlider.get();
+            var guesses = [];
+            for (var i = guess_slider[0]; i <= guess_slider[1]; i++) {
+                guesses.push(i);
+            }
             var fee = web3.toWei(document.getElementById('fee-slider').noUiSlider.get().replace(' ETH',''), 'ether');
-            if (start.length == 2 && start.match(/[0-9a-f]{2}/) &&
-                end.length == 2 && end.match(/[0-9a-f]{2}/) &&
-                fee.length > 0 && fee.match(/[0-9]+/)) {
-                start = "0x" + start;
-                end = "0x" + end;
+            if (guesses.length > 0 && fee.length > 0 && fee.match(/[0-9]+/)) {
                 fee = new BigNumber(fee);
-                data.contract.play(start, end, { from : web3.eth.accounts[0], value: fee }, function (e, r) {
+                console.log(guesses);
+                data.contract.play(guesses, { from : web3.eth.accounts[0], value: fee }, function (e, r) {
                     if (e) {
                         document.getElementById('play-error').innerText = 'Transaction was NOT completed, try again.';
                         console.log(e.message);
@@ -474,7 +474,7 @@ time {
             }
         };
 
-        var address = '0x995f617066a6968749eb980c2613314f4d45d4ab';
+        var address = '0xe776A9896f93872E5500d737989f6c3ac105C461';
         var contract = web3.eth.contract(abi);
         var ETHBlockByte = contract.at(address);
         var step = 1000000000000000; // 0.001 ETH
