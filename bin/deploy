@@ -1,0 +1,12 @@
+#!/bin/bash
+
+. bin/conf
+. bin/compile
+
+mkdir -p $SCRIPT_DIR
+
+sed -e 's/ABI/'$ABI'/' \
+    -e 's/CODE/'$CODE'/' \
+    -e 's/OWNER/'$OWNER'/' bin/deploy.tpl.js > $SCRIPT
+
+$GETH --jspath $PWD --exec "loadScript('$SCRIPT');" attach ipc:$IPC

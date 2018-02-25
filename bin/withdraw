@@ -1,0 +1,19 @@
+#!/bin/bash
+
+usage () {
+    echo "Usage $0 LOTTERY"
+    exit 1
+}
+
+[[ -n "$1" ]] || usage
+
+lottery="$1"
+
+. bin/conf
+. bin/compile
+
+sed -e 's/LOTTERY/'$lottery'/' \
+    -e 's/OWNER/'$OWNER'/' \
+    -e 's/ABI/'$ABI'/' bin/withdraw.tpl.js > $SCRIPT
+
+$GETH --jspath $PWD --exec "loadScript('$SCRIPT');" attach ipc:$IPC

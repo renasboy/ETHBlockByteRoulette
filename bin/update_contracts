@@ -1,0 +1,9 @@
+#!/bin/bash
+
+. bin/compile
+
+#sed -e 's/^var code.*/var code = "0x'$CODE'";/' \
+#    -e 's/^var abi.*/var abi = '$ABI';/' -i README.md
+
+sed -e 's/^var code.*/var code = "0x'$CODE'";/' \
+    -e 's/^var abi.*/var abi = '$ABI';/' -i bin/conf.js

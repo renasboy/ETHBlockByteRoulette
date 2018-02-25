@@ -1,0 +1,5 @@
+#!/bin/bash
+
+. bin/conf.test
+
+$GETH --testnet --datadir ~/eth-testnet --verbosity 0 console

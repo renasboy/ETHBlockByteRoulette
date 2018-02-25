@@ -1,2 +1,2 @@
 # ETHBlockByteRoulette
-Ethereum Block Byte Roulette
+Ethereum Block Byte Roulette Game
